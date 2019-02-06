@@ -1,0 +1,23 @@
+$(document).ready(function () {
+
+$.getJSON("/articles", function(data) {
+    console.log(data);
+    for (var i = 0; i < data.length; i++) {
+      $("#articles").append("<p data-id='" + data[i]._id + "'>" + data[i].title + "<br />" + data[i].link + "<br />" + data[i].author + "</p>");
+      $("#articles").append("<form> Username: <br> <input type='text' name='userName' id='userName'><br> Comment: <br> <input type='text' name='comment'id='comment'><br><input type='submit'id='submit'></form>")
+    }
+});
+
+
+
+$("#submit").on("click", function(e){
+  e.preventDefault();
+  console.log("clicked");
+  var newComment = {
+    user: $("#userName").val(),
+    comment: $("#comment").val(),
+  };
+  console.log(newComment);
+})
+
+});

@@ -15,22 +15,29 @@ app.use(express.json());
 // Make public a static folder
 app.use(express.static("public"));
 
-// Connect to the Mongo DB using Mongoose 
-mongoose.connect("mongodb://localhost/newsScraper", { useNewUrlParser: true });
+var MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost/newsScraper";
+
+mongoose.connect(MONGODB_URI, {
+    useCreateIndex: true,
+    useNewUrlParser: true
+  });
 
 //Scrape route
 app.get("/scrape", function(req, res) {
     axios.get("https://www.golfdigest.com/").then(function(response) {
         var $ = cheerio.load(response.data);
-        $("h3.feature-item-hed").each(function(i, element){
+        $("div.feature-item-content").each(function(i, element){
             var result = {};
             //Collect result data
-            result.title = $(this)
-            .children("a")
-            .text();
-            result.link = $(this)
-            .children("a")
-            .attr("href");
+            result.title = $(this)[0].children[2].children[0].firstChild.data;
+            var link = $(this)[0].children[2].attribs.href;
+            if(!link.includes("golfdigest.com")){
+                result.link = "https://www.golfdigest.com" + $(this)[0].children[2].attribs.href;
+            }
+            else{
+                result.link = $(this)[0].children[2].attribs.href;
+            };
+            result.author = $(this)[0].children[3].children[0].children[2].children[0].childNodes[0].data;
             //Creates new DB object
             db.Article.create(result)
             .then(function(dbArticle) {
@@ -43,3 +50,18 @@ app.get("/scrape", function(req, res) {
     res.send("Scrape Complete");
   });
 });
+
+//Retrieve articles route
+app.get("/articles", function(req, res) {
+    db.Article.find({})
+    .then(function(dbArticle){
+        res.json(dbArticle)
+    })
+    .catch(function(err){
+        res.json(err);
+    });
+});
+
+app.listen(PORT, function() {
+    console.log("App running on port " + PORT + "!");
+  });
